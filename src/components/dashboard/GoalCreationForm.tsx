@@ -20,9 +20,12 @@ const GoalCreationForm: React.FC<GoalCreationFormProps> = ({
   const [title, setTitle] = useState(initialData?.title || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [domain, setDomain] = useState<Goal['domain']>(initialData?.domain || 'personal');
-  const [targetDate, setTargetDate] = useState(
-    initialData?.targetDate ? new Date(initialData.targetDate).toISOString().split('T')[0] : ''
-  );
+  const [targetDate, setTargetDate] = useState(() => {
+    if (initialData?.targetDate && !isNaN(new Date(initialData.targetDate).getTime())) {
+      return new Date(initialData.targetDate).toISOString().split('T')[0];
+    }
+    return '';
+  });
   const [milestones, setMilestones] = useState<Omit<Milestone, 'id' | 'completed' | 'completedDate'>[]>(
     initialData?.milestones.map(m => ({
       title: m.title,
@@ -73,7 +76,7 @@ const GoalCreationForm: React.FC<GoalCreationFormProps> = ({
       title,
       description,
       domain,
-      status: 'active',
+      status: 'active' as const,
       targetDate: targetDate ? new Date(targetDate) : undefined,
       milestones: milestones.map(m => ({
         ...m,
@@ -90,8 +93,8 @@ const GoalCreationForm: React.FC<GoalCreationFormProps> = ({
       routines: routines.map(r => ({
         ...r,
         id: crypto.randomUUID(),
-        lastCompleted: null,
-        nextDue: null,
+        lastCompleted: undefined,
+        nextDue: undefined,
       })),
       resources: resources.filter(r => r.trim() !== ''),
       obstacles: obstacles.filter(o => o.trim() !== ''),
@@ -332,7 +335,13 @@ const GoalCreationForm: React.FC<GoalCreationFormProps> = ({
                       <div className="flex gap-4">
                         <input
                           type="date"
-                          value={milestone.targetDate.toISOString().split('T')[0]}
+                          value={
+                            milestone.targetDate instanceof Date && !isNaN(milestone.targetDate.getTime())
+                              ? milestone.targetDate.toISOString().split('T')[0]
+                              : typeof milestone.targetDate === 'string'
+                              ? milestone.targetDate
+                              : ''
+                          }
                           onChange={(e) => updateMilestone(index, 'targetDate', e.target.value)}
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
                         />
